@@ -39,12 +39,12 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
 
 	var feed RSSFeed
 	if err = xml.Unmarshal(data, &feed); err != nil {
