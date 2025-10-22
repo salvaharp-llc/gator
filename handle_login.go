@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -10,7 +11,12 @@ func handlerLogin(s *state, cmd command) error {
 	}
 	userName := cmd.args[0]
 
-	err := s.cfg.SetUser(userName)
+	_, err := s.db.GetUser(context.Background(), userName)
+	if err != nil {
+		return fmt.Errorf("unknown user: %w", err)
+	}
+
+	err = s.cfg.SetUser(userName)
 	if err != nil {
 		return fmt.Errorf("could not set current user: %w", err)
 	}
