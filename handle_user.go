@@ -48,7 +48,7 @@ func handlerLogin(s *state, cmd command) error {
 
 	_, err := s.db.GetUser(context.Background(), userName)
 	if err != nil {
-		return fmt.Errorf("unknown user: %w", err)
+		return fmt.Errorf("could not find user: %w", err)
 	}
 
 	err = s.cfg.SetUser(userName)
@@ -57,5 +57,25 @@ func handlerLogin(s *state, cmd command) error {
 	}
 
 	fmt.Printf("User set to %s\n", userName)
+	return nil
+}
+
+func handlerListUsers(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("usage: %s", cmd.name)
+	}
+
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("could not retrieve users: %w", err)
+	}
+
+	for _, user := range users {
+		if user.Name == s.cfg.CurrentUserName {
+			fmt.Printf("* %s (current)\n", user.Name)
+			continue
+		}
+		fmt.Printf("* %s\n", user.Name)
+	}
 	return nil
 }
