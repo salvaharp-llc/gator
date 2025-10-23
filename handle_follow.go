@@ -9,7 +9,7 @@ import (
 	"github.com/salvaharp-llc/gator/internal/database"
 )
 
-func handlerAddFollow(s *state, cmd command, user database.User) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("usage: %s <url>", cmd.name)
 	}
@@ -42,7 +42,7 @@ func handlerListFollows(s *state, cmd command, user database.User) error {
 
 	followsInfo, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
-		return fmt.Errorf("could not get followed feeds; %w", err)
+		return fmt.Errorf("could not get followed feeds: %w", err)
 	}
 
 	if len(followsInfo) == 0 {
@@ -54,6 +54,28 @@ func handlerListFollows(s *state, cmd command, user database.User) error {
 	for _, feedInfo := range followsInfo {
 		fmt.Printf("- %s\n", feedInfo.FeedName)
 	}
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("usage: %s <url>", cmd.name)
+	}
+
+	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.args[0])
+	if err != nil {
+		return fmt.Errorf("could not find feed: %w", err)
+	}
+
+	err = s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("could not delete feed follow: %w", err)
+	}
+
+	fmt.Printf("%s unfollowed successfully!\n", feed.Name)
 	return nil
 }
 
