@@ -40,10 +40,10 @@ func main() {
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerListUsers)
 	cmds.register("agg", handlerAggregation)
-	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	cmds.register("feeds", handlerListFeeds)
-	cmds.register("follow", handlerAddFollow)
-	cmds.register("following", handlerListFollows)
+	cmds.register("follow", middlewareLoggedIn(handlerAddFollow))
+	cmds.register("following", middlewareLoggedIn(handlerListFollows))
 
 	args := os.Args
 	if len(args) < 2 {
@@ -51,10 +51,6 @@ func main() {
 	}
 
 	err = cmds.run(&s, command{name: args[1], args: args[2:]})
-	if err != nil {
-		log.Fatal(err)
-	}
-	cfg, err = config.Read()
 	if err != nil {
 		log.Fatal(err)
 	}
