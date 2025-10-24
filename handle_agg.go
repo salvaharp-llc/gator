@@ -2,9 +2,14 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/salvaharp-llc/gator/internal/database"
 )
 
 func handlerAggregation(s *state, cmd command) error {
@@ -33,8 +38,11 @@ func scrapeFeeds(s *state) {
 	}
 
 	log.Println("Found a feed to fetch!")
+	scrapeFeed(s, feed)
+}
 
-	_, err = s.db.MarkFeedFetched(context.Background(), feed.ID)
+func scrapeFeed(s *state, feed database.Feed) {
+	_, err := s.db.MarkFeedFetched(context.Background(), feed.ID)
 	if err != nil {
 		log.Printf("Could not mark feed %s fetched: %v", feed.Name, err)
 		return
@@ -47,7 +55,52 @@ func scrapeFeeds(s *state) {
 	}
 
 	for _, item := range rssFeed.Channel.Item {
-		fmt.Printf("Found post %s\n", item.Title)
+		pubDate, err := parseDate(item.PubDate)
+		if err != nil {
+			log.Printf("Could not parse pub date from %s: %v", item.Title, err)
+			continue
+		}
+
+		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: true},
+			PublishedAt: pubDate,
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
+		}
 	}
 	log.Printf("Feed %s fetched, %v posts found\n", feed.Name, len(rssFeed.Channel.Item))
+}
+
+func parseDate(strDate string) (time.Time, error) {
+	layouts := []string{
+		time.RFC1123,
+		time.RFC1123Z,
+		"02 Jan 2006 15:04:05 MST",
+		"02 Jan 2006 15:04:05 -0700",
+	}
+	var timeDate time.Time
+	var err error
+
+	for _, layout := range layouts {
+		timeDate, err = time.Parse(layout, strDate)
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
+		return time.Time{}, err
+	}
+	return timeDate, nil
 }
