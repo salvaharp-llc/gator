@@ -10,23 +10,21 @@ gator is a small command-line blog aggregator that fetches posts from RSS/Atom f
 
 ## Install
 
-Install the gator CLI with `go install` (this installs the binary to `$GOPATH/bin` or `$GOBIN`):
+Install the gator CLI with `go install`:
 
 ```bash
 go install github.com/salvaharp-llc/gator@latest
 ```
-
-After installation you should have a `gator` executable available in your Go bin directory. Add it to your PATH if necessary (for example, `export PATH="$PATH:$(go env GOPATH)/bin"`).
 
 ## Configuration
 
 gator expects a JSON config file in your home directory named `.gatorconfig.json` with the following structure:
 
 ```json
-{"db_url":"postgres://user:password@localhost:5432/gator?sslmode=disable"}
+{"db_url":"postgres://username@localhost:5432/gator?sslmode=disable"}
 ```
 
-Place this file at `~/.gatorconfig.json`. Replace `user`, `password`, `localhost`, `5432`, and `gator` with your database connection details.
+Place this file at `~/.gatorconfig.json`. Replace `username`, `localhost`, `5432`, and `gator` with your database connection details.
 
 Notes:
 - Use `sslmode=disable` for local development when Postgres does not use TLS.
@@ -55,22 +53,28 @@ Available commands
 
 Examples
 
-- Register a new user:
+Create a new user:
 
 ```bash
-gator register
+gator register <name>
 ```
 
-- Add a feed (requires you to be logged in):
+Add a feed:
 
 ```bash
-gator addfeed https://example.com/feed.xml
+gator addfeed <url>
 ```
 
-- Fetch and aggregate feeds:
+Start the aggregator:
 
 ```bash
-gator agg
+gator agg 30s
+```
+
+View the posts:
+
+```bash
+gator browse [limit]
 ```
 
 ## Creating the database for gator
